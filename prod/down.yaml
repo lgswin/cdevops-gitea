@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  tasks:
+  - name: remove mysql
+    kubernetes.core.k8s:
+      state: absent
+      src: mysql.yaml
+  - name: "remove kubernetes python package"
+    pip:
+      name: kubernetes
+      state: absent

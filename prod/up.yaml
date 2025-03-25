@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  tasks:
+  - name: "Install kubernetes python package"
+    pip:
+      name: kubernetes
+      state: present
+  - name: install mysql
+    kubernetes.core.k8s:
+      state: present
+      src: mysql.yaml
