@@ -1,0 +1,18 @@
+---
+gitea:
+  admin:
+    username: admin
+    password: Secret5555
+    email: glee6937@conestogac.on.ca
+  config:
+    database:
+      DB_TYPE: mysql
+      HOST: mysql:3306
+      NAME: gitea
+      USER: root
+      PASSWD: Secret5555
+persistence:
+  enabled: true
+  size: 10Gi
+  accessModes:
+    - ReadWriteOnce
