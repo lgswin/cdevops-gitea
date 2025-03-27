@@ -53,12 +53,15 @@ spec:
         app: mysql
     spec:
       containers:
-      - image: mysql:8.0
+      - image: mysql:8.0 # to fix a compatible issue.
         name: mysql
         env:
           # Use secret in real usage
           - name: MYSQL_ROOT_PASSWORD
             value: Secret5555
+          # Create database gitea
+          - name: MYSQL_DATABASE
+            value: gitea
         ports:
         - containerPort: 3306
           name: mysql

@@ -9,14 +9,6 @@
     kubernetes.core.k8s:
       state: present
       src: mysql.yaml
-  # - name: install gitea via helm
-  #   community.kubernetes.helm:
-  #     name: gitea
-  #     chart_ref: gitea-charts/gitea
-  #     release_namespace: default
-  #     create_namespace: true
-  #     values_files:
-  #       - values.yaml
   - name: Add gitea chart repo
     kubernetes.core.helm_repository:
       name: gitea-charts
