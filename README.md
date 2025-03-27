@@ -1,54 +1,110 @@
-# cdevops-gitea
-k8s gitea lab to take dev (sqlite based) to prod (mysql based)
+# Gitea Deployment Report using Ansible, Helm, Minikube, and Ngrok
 
-TLDR;
+## Prerequisites
+
+- This setup must be executed inside a **GitHub Codespace environment** with Docker and Kubernetes support.
+- A valid **Ngrok account** is required.
+- You must generate and configure your **Ngrok authtoken** from the Ngrok dashboard:
+    
+    https://dashboard.ngrok.com/get-started/setup
+    
+
+---
+
+## values.yaml
+
+- Defines Helm chart configurations used during Gitea deployment
+- Sets up an initial admin account for Gitea
+- Configures Gitea to use an external MySQL database instead of the default PostgreSQL
+- Enables persistent volume for storing Gitea data across pod restarts
+
+---
+
+## up.yaml
+
+- Ansible playbook for automating the deployment of MySQL and Gitea to Kubernetes
+- Installs the required `kubernetes` Python package for Ansible
+- Applies `mysql.yaml` to deploy MySQL with PersistentVolume and a dedicated service
+- Adds the Gitea Helm chart repository: `https://dl.gitea.com/charts/`
+- Installs the latest Gitea release using Helm with custom values from `values.yaml`
+- Disables PostgreSQL and Redis services to avoid conflict with the external MySQL
+
+---
+
+## Execution Steps
 
 ```bash
-cd dev && ansible-playbook up.yaml
+minikube start
 ```
 
-If that fails you may need some pre-requisites
-
-1. run `ansible-playbook --version` to see if you have ansible. If not run:
+- Initializes a local Kubernetes cluster using the Docker driver
+- Downloads Kubernetes images and creates the control plane
+- Configures the local environment for `kubectl` access
+- Enables default addons such as `storage-provisioner`
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/conestogac-acsit/cdevops-bootstrap/refs/heads/main/bootstrap.sh)
+ansible-playbook up.yaml
 ```
 
-2. run `kubectl get ns default` to see if you have a cluster. The expected result is:
-
-```
-NAME      STATUS   AGE
-default   Active   29m
-```
-
-If you have another result try installing a k8s cluster:
+- Runs all tasks defined in `up.yaml`
+- Installs the Kubernetes Python client
+- Deploys MySQL resources including PersistentVolumeClaim
+- Adds the Gitea Helm repository and deploys Gitea using Helm
+- Uses `values.yaml` to configure Gitea with MySQL and persistent storage
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com//conestogac-acsit/cdevops-bootstrap/refs/heads/main/k8s.sh)
+kubectl get svc
 ```
 
-Once you have made it through the `up.yaml` playbook you can forward the port:
+- Confirms that the following services are created:
+    - `gitea-http`: Gitea web interface (port 3000)
+    - `gitea-ssh`: Gitea SSH interface (port 22)
+    - `mysql`: MySQL service used by Gitea (port 3306)
+
+```bash
+kubectl get pods
+```
+
+- Verifies that the Gitea pod and MySQL pod are both in `Running` state
+- Indicates that all containers are healthy and ready
 
 ```bash
 kubectl port-forward svc/gitea-http 3000:3000
 ```
 
-Now you should be able to access gitea in development mode.
+- Forwards local port 3000 to Gitea's service inside the Kubernetes cluster
+- Enables access to the Gitea web UI through `http://localhost:3000`
+- Allows login using the pre-configured admin account
 
-The challenge is to run this in production mode from a prod folder at the same level as the dev folder with it's own up, down and values.yaml.
+---
 
-### Points to Cover
+## Exposing Gitea to the Public using Ngrok
 
-## Marking
+```bash
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-linux-amd64.zip
+unzip ngrok-stable-linux-amd64.zip
+sudo mv ngrok /usr/local/bin
+```
 
-|Item|Out Of|
-|--|--:|
-|use [the gitea helm](https://gitea.com/gitea/helm-gitea) to make the repository data persistent|2|
-|change the root password for the provided mysql service|2|
-|make gitea use the provided mysql service|2|
-|Use [this article](https://blog.techiescamp.com/using-ngrok-with-kubernetes/) to expose your gitea instance publically|2|
-|create a public clone of your finished work, based on this template on your gitea|1|
-|make sure that your instance is running for marking and submit a link to the repository from the previous step|1|
-|||
-|total|10|
+- Installs `ngrok` manually from the official source
+- Places the binary into the system path for global use
+
+```bash
+ngrok config add-authtoken <NGROK_TOKEN>
+```
+
+- Registers your Ngrok account for authenticated tunneling
+
+```bash
+kubectl port-forward svc/gitea-http 3000:3000
+```
+
+- Forwards port 3000 locally so Ngrok can connect to the service
+
+```bash
+ngrok http 3000
+```
+
+- Opens a secure public tunnel to [`localhost:3000`](http://localhost:3000) or codespace address
+- Ngrok provides a public HTTPS URL (e.g., `https://abc123.ngrok.io`)
+- You can now access your Gitea instance from outside the local network
