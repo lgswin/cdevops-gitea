@@ -1,0 +1,22 @@
+- hosts: localhost
+  tasks:
+    - name: Install ngrok binary
+      ansible.builtin.get_url:
+        url: https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-linux-amd64.zip
+        dest: /tmp/ngrok.zip
+        mode: '0755'
+
+    - name: Unzip ngrok
+      ansible.builtin.unarchive:
+        src: /tmp/ngrok.zip
+        dest: /usr/local/bin/
+        remote_src: yes
+        creates: /usr/local/bin/ngrok
+
+    - name: Add ngrok authtoken
+      ansible.builtin.command: ngrok config add-authtoken 2uv27MouIb6WP55Gfw6mhZymuIh_7i9vWhjG3coVAQLeJ9YYr
+      args:
+        creates: ~/.ngrok2/ngrok.yml
+
+    - name: Start ngrok tunnel
+      ansible.builtin.command: ngrok http 3000
